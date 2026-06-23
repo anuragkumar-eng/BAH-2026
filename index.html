@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>FrameSynth — Satellite Frame Comparison</title>
+
+	<!-- Chart.js from CDN, as requested -->
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+	<style>
+		/* Basic reset so spacing behaves predictably */
+		* {
+			box-sizing: border-box;
+		}
+
+		body {
+			margin: 0;
+			font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+			background: radial-gradient(circle at top, #10213b 0%, #0a1628 58%, #07101d 100%);
+			color: #c7d2e0;
+		}
+
+		header {
+			background: rgba(10, 22, 40, 0.92);
+			border-bottom: 1px solid rgba(79, 209, 197, 0.18);
+			color: white;
+			padding: 28px 16px;
+			text-align: center;
+			backdrop-filter: blur(8px);
+		}
+
+		header h1 {
+			margin: 0 0 8px;
+			font-size: 1.8rem;
+			font-weight: 800;
+			font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+		}
+
+		header p {
+			margin: 0;
+			color: #8ea3ba;
+		}
+
+		main {
+			max-width: 1100px;
+			margin: 0 auto;
+			padding: 28px 16px 48px;
+		}
+
+		.section-card {
+			background: rgba(13, 26, 46, 0.9);
+			border: 1px solid rgba(79, 209, 197, 0.12);
+			border-radius: 12px;
+			padding: 22px;
+			box-shadow: 0 16px 36px rgba(0, 0, 0, 0.26);
+			margin-bottom: 22px;
+		}
+
+		.image-row {
+			display: flex;
+			gap: 16px;
+			flex-wrap: wrap;
+		}
+
+		.image-box {
+			flex: 1 1 320px;
+			min-width: 280px;
+		}
+
+		.image-label {
+			margin: 0 0 10px;
+			font-weight: bold;
+			font-size: 1rem;
+			color: #ffffff;
+		}
+
+		.image-frame {
+			width: 100%;
+			height: 240px;
+			object-fit: cover;
+			border-radius: 12px;
+			display: block;
+			border: 1px solid rgba(79, 209, 197, 0.22);
+			background: #17273d;
+			box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+			transition: opacity 0.2s ease;
+		}
+
+		.image-frame.is-fading {
+			opacity: 0.72;
+		}
+
+		.slider-row {
+			margin-top: 18px;
+			display: grid;
+			gap: 10px;
+		}
+
+		.slider-control-row {
+			display: flex;
+			gap: 12px;
+			align-items: center;
+		}
+
+		.play-toggle {
+			flex: 0 0 auto;
+			padding: 10px 16px;
+			border: none;
+			border-radius: 10px;
+			background: #4fd1c5;
+			color: #0a1628;
+			font-weight: 700;
+			cursor: pointer;
+			box-shadow: 0 8px 18px rgba(79, 209, 197, 0.2);
+			transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+		}
+
+		.play-toggle:hover {
+			background: #60ddcf;
+		}
+
+		.play-toggle:active {
+			transform: translateY(1px);
+		}
+
+		.slider-topline {
+			display: flex;
+			justify-content: space-between;
+			gap: 12px;
+			align-items: center;
+			flex-wrap: wrap;
+			color: #8ea3ba;
+		}
+
+		.frame-label {
+			font-weight: bold;
+			color: #4fd1c5;
+			font-family: "Consolas", "Courier New", monospace;
+		}
+
+		input[type="range"] {
+			width: 100%;
+			accent-color: #4fd1c5;
+			background: transparent;
+			height: 28px;
+		}
+
+		input[type="range"]::-webkit-slider-runnable-track {
+			height: 8px;
+			border-radius: 999px;
+			background: linear-gradient(90deg, rgba(79, 209, 197, 0.95), rgba(79, 209, 197, 0.45));
+		}
+
+		input[type="range"]::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 18px;
+			height: 18px;
+			margin-top: -5px;
+			border-radius: 50%;
+			background: #4fd1c5;
+			border: 2px solid #0a1628;
+			box-shadow: 0 0 0 4px rgba(79, 209, 197, 0.16);
+		}
+
+		input[type="range"]::-moz-range-track {
+			height: 8px;
+			border-radius: 999px;
+			background: linear-gradient(90deg, rgba(79, 209, 197, 0.95), rgba(79, 209, 197, 0.45));
+		}
+
+		input[type="range"]::-moz-range-thumb {
+			width: 18px;
+			height: 18px;
+			border-radius: 50%;
+			background: #4fd1c5;
+			border: 2px solid #0a1628;
+			box-shadow: 0 0 0 4px rgba(79, 209, 197, 0.16);
+		}
+
+		.metrics-grid {
+			display: flex;
+			gap: 12px;
+			flex-wrap: wrap;
+		}
+
+		.metric-card {
+			flex: 1 1 180px;
+			min-width: 160px;
+			background: #f5f1e8;
+			border: 1px solid rgba(79, 209, 197, 0.28);
+			border-radius: 12px;
+			padding: 16px;
+			box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+			transition: box-shadow 0.2s ease, transform 0.2s ease;
+		}
+
+		.metric-name {
+			margin: 0 0 10px;
+			font-size: 0.95rem;
+			color: #4d6177;
+		}
+
+		.metric-value {
+			margin: 0;
+			font-size: 1.4rem;
+			font-weight: bold;
+			color: #0a1628;
+			font-family: "Consolas", "Courier New", monospace;
+		}
+
+		.chart-wrap {
+			height: 320px;
+		}
+
+		.chart-panel-row {
+			display: flex;
+			gap: 16px;
+			align-items: stretch;
+		}
+
+		.chart-panel-row .section-card {
+			margin-bottom: 0;
+		}
+
+		.chart-panel {
+			flex: 1 1 320px;
+			background: rgba(13, 26, 46, 0.9);
+			border: 1px solid rgba(79, 209, 197, 0.12);
+			border-radius: 12px;
+			padding: 22px;
+			box-shadow: 0 16px 36px rgba(0, 0, 0, 0.26);
+			transition: box-shadow 0.2s ease, transform 0.2s ease;
+		}
+
+		.scenario-list {
+			display: grid;
+			gap: 0;
+		}
+
+		.scenario-item {
+			display: flex;
+			gap: 12px;
+			align-items: flex-start;
+			padding: 14px 0;
+			border-radius: 10px;
+			padding-left: 10px;
+			padding-right: 10px;
+			transition: background-color 0.2s ease;
+		}
+
+		.scenario-item + .scenario-item {
+			border-top: 1px solid rgba(142, 163, 186, 0.18);
+		}
+
+		.scenario-item:hover {
+			background: rgba(255, 255, 255, 0.04);
+		}
+
+		.scenario-dot {
+			width: 10px;
+			height: 10px;
+			border-radius: 50%;
+			margin-top: 6px;
+			flex: 0 0 auto;
+			box-shadow: 0 0 0 4px rgba(79, 209, 197, 0.08);
+		}
+
+		.scenario-dot.green {
+			background: #4fd1c5;
+		}
+
+		.scenario-dot.amber {
+			background: #f4b860;
+			box-shadow: 0 0 0 4px rgba(244, 184, 96, 0.1);
+		}
+
+		.scenario-name {
+			margin: 0 0 4px;
+			color: #ffffff;
+			font-weight: 700;
+		}
+
+		.scenario-meta {
+			margin: 0;
+			color: #8ea3ba;
+			font-size: 0.9rem;
+		}
+
+		h2 {
+			color: #ffffff;
+			margin-top: 0;
+		}
+
+		@media (max-width: 700px) {
+			.image-row {
+				flex-direction: column;
+			}
+
+			.image-frame {
+				height: 200px;
+			}
+
+			.metrics-grid {
+				display: grid;
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+
+			.chart-panel-row {
+				flex-direction: column;
+			}
+
+			.slider-control-row {
+				flex-direction: column;
+				align-items: stretch;
+			}
+
+			.play-toggle,
+			input[type="range"] {
+				width: 100%;
+			}
+
+			.chart-wrap {
+				height: 280px;
+			}
+		}
+	</style>
+</head>
+<body>
+	<!-- Section 1: Header -->
+	<header>
+		<h1>FrameSynth — Satellite Frame Comparison</h1>
+		<p>Compare a ground truth frame with an AI-generated interpolation frame.</p>
+	</header>
+
+	<main>
+		<!-- Section 2: Two image boxes side by side -->
+		<section class="section-card">
+			<div class="image-row">
+				<div class="image-box">
+					<p class="image-label">Ground Truth</p>
+					<img id="groundTruthImage" class="image-frame" src="https://placehold.co/600x400/E3EAF2/0a1628?text=Ground+Truth+0" alt="Ground truth placeholder frame">
+				</div>
+
+				<div class="image-box">
+					<p class="image-label">AI-Interpolated</p>
+					<img id="aiImage" class="image-frame" src="https://placehold.co/600x400/4FD1C5/0a1628?text=AI+Interpolated+0" alt="AI interpolated placeholder frame">
+				</div>
+			</div>
+
+			<!-- Section 3: Slider that changes the frame label and image sources -->
+			<div class="slider-row">
+				<div class="slider-topline">
+					<span class="frame-label" id="frameLabel">Frame: 0</span>
+					<span>Move the slider to swap placeholder frames.</span>
+				</div>
+
+				<div class="slider-control-row">
+					<button type="button" class="play-toggle" id="playToggle">Play</button>
+					<input type="range" id="frameSlider" min="0" max="4" step="1" value="0" aria-label="Frame slider">
+				</div>
+			</div>
+		</section>
+
+		<!-- Section 4: Metric cards -->
+		<section class="section-card">
+			<div class="metrics-grid">
+				<div class="metric-card">
+					<p class="metric-name">SSIM</p>
+					<p class="metric-value">0.974</p>
+				</div>
+
+				<div class="metric-card">
+					<p class="metric-name">PSNR</p>
+					<p class="metric-value">34.2</p>
+				</div>
+
+				<div class="metric-card">
+					<p class="metric-name">MSE</p>
+					<p class="metric-value">0.0091</p>
+				</div>
+
+				<div class="metric-card">
+					<p class="metric-name">FSIM</p>
+					<p class="metric-value">0.951</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- Section 5: Chart.js line chart plus scenario coverage panel -->
+		<div class="chart-panel-row">
+			<section class="section-card" style="flex: 1 1 0;">
+				<h2 style="margin-top: 0;">SSIM Across Frames</h2>
+				<div class="chart-wrap">
+					<canvas id="ssimChart"></canvas>
+				</div>
+			</section>
+
+			<section class="chart-panel">
+				<h2 style="margin-top: 0;">Scenario Coverage</h2>
+				<div class="scenario-list">
+					<div class="scenario-item">
+						<span class="scenario-dot green"></span>
+						<div>
+							<p class="scenario-name">Steady cloud drift</p>
+							<p class="scenario-meta">SSIM 0.981 · 42 sequences</p>
+						</div>
+					</div>
+
+					<div class="scenario-item">
+						<span class="scenario-dot green"></span>
+						<div>
+							<p class="scenario-name">Thunderstorm formation</p>
+							<p class="scenario-meta">SSIM 0.967 · 28 sequences</p>
+						</div>
+					</div>
+
+					<div class="scenario-item">
+						<span class="scenario-dot amber"></span>
+						<div>
+							<p class="scenario-name">Cyclone fast-rotation edge</p>
+							<p class="scenario-meta">SSIM 0.918 · 19 sequences</p>
+						</div>
+					</div>
+
+					<div class="scenario-item">
+						<span class="scenario-dot green"></span>
+						<div>
+							<p class="scenario-name">Clear-sky / land boundary</p>
+							<p class="scenario-meta">SSIM 0.992 · 31 sequences</p>
+						</div>
+					</div>
+				</div>
+			</section>
+		</div>
+	</main>
+
+	<script>
+		// Section 3 script: slider logic for frame changes
+		const frameSlider = document.getElementById('frameSlider');
+		const frameLabel = document.getElementById('frameLabel');
+		const groundTruthImage = document.getElementById('groundTruthImage');
+		const aiImage = document.getElementById('aiImage');
+		const playToggle = document.getElementById('playToggle');
+		const metricValueElements = document.querySelectorAll('.metric-card .metric-value');
+		const scenarioList = document.querySelector('.scenario-list');
+		const ssimCanvas = document.getElementById('ssimChart');
+		let ssimChart = null;
+
+		const defaultDashboardData = {
+			summary: { ssim: 0.974, psnr: 34.2, mse: 0.0091, fsim: 0.951 },
+			chart: [0.91, 0.925, 0.938, 0.945, 0.956, 0.962, 0.968, 0.972, 0.974, 0.976],
+			scenarios: [
+				{ name: 'Steady cloud drift', ssim: 0.981, sequences: 42, status: 'good' },
+				{ name: 'Thunderstorm formation', ssim: 0.967, sequences: 28, status: 'good' },
+				{ name: 'Cyclone fast-rotation edge', ssim: 0.918, sequences: 19, status: 'moderate' },
+				{ name: 'Clear-sky / land boundary', ssim: 0.992, sequences: 31, status: 'good' }
+			]
+		};
+
+		const groundTruthFrames = [
+				'https://placehold.co/600x400/E3EAF2/0a1628?text=Ground+Truth+0',
+				'https://placehold.co/600x400/D6DEE8/0a1628?text=Ground+Truth+1',
+				'https://placehold.co/600x400/CAD4E0/0a1628?text=Ground+Truth+2',
+				'https://placehold.co/600x400/BFCAD9/0a1628?text=Ground+Truth+3',
+				'https://placehold.co/600x400/B3C0D2/0a1628?text=Ground+Truth+4'
+		];
+
+		const aiFrames = [
+				'https://placehold.co/600x400/4FD1C5/0a1628?text=AI+Interpolated+0',
+				'https://placehold.co/600x400/5AD8CC/0a1628?text=AI+Interpolated+1',
+				'https://placehold.co/600x400/66E0D4/0a1628?text=AI+Interpolated+2',
+				'https://placehold.co/600x400/72E6DB/0a1628?text=AI+Interpolated+3',
+				'https://placehold.co/600x400/7FEDE1/0a1628?text=AI+Interpolated+4'
+		];
+
+			let frameSwapTimer = null;
+
+			function updateFrameView(animate = true) {
+			const frameIndex = Number(frameSlider.value);
+
+			frameLabel.textContent = 'Frame: ' + frameIndex;
+
+				if (frameSwapTimer !== null) {
+					clearTimeout(frameSwapTimer);
+				}
+
+				if (!animate) {
+					groundTruthImage.src = groundTruthFrames[frameIndex];
+					aiImage.src = aiFrames[frameIndex];
+					return;
+				}
+
+			groundTruthImage.classList.add('is-fading');
+			aiImage.classList.add('is-fading');
+
+				frameSwapTimer = setTimeout(function () {
+				groundTruthImage.src = groundTruthFrames[frameIndex];
+				aiImage.src = aiFrames[frameIndex];
+
+				requestAnimationFrame(function () {
+					groundTruthImage.classList.remove('is-fading');
+					aiImage.classList.remove('is-fading');
+				});
+			}, 90);
+		}
+
+		frameSlider.addEventListener('input', updateFrameView);
+			updateFrameView(false);
+
+		let playTimer = null;
+
+		function startPlaying() {
+			if (playTimer !== null) {
+				return;
+			}
+
+			playToggle.textContent = 'Pause';
+			playTimer = setInterval(function () {
+				const nextFrame = (Number(frameSlider.value) + 1) % 5;
+				frameSlider.value = String(nextFrame);
+				updateFrameView();
+			}, 800);
+		}
+
+		function stopPlaying() {
+			if (playTimer === null) {
+				return;
+			}
+
+			clearInterval(playTimer);
+			playTimer = null;
+			playToggle.textContent = 'Play';
+		}
+
+		playToggle.addEventListener('click', function () {
+			if (playTimer === null) {
+				startPlaying();
+			} else {
+				stopPlaying();
+			}
+		});
+
+		function applyDashboardData(dashboardData) {
+			const summaryValues = [dashboardData.summary.ssim, dashboardData.summary.psnr, dashboardData.summary.mse, dashboardData.summary.fsim];
+
+			metricValueElements.forEach(function (element, index) {
+				element.textContent = String(summaryValues[index]);
+			});
+
+			scenarioList.innerHTML = dashboardData.scenarios.map(function (scenario) {
+				const dotClass = scenario.status === 'moderate' ? 'amber' : 'green';
+				return '<div class="scenario-item">' +
+					'<span class="scenario-dot ' + dotClass + '"></span>' +
+					'<div>' +
+						'<p class="scenario-name">' + scenario.name + '</p>' +
+						'<p class="scenario-meta">SSIM ' + scenario.ssim.toFixed(3) + ' · ' + scenario.sequences + ' sequences</p>' +
+					'</div>' +
+				'</div>';
+			}).join('');
+
+			const ssimLabels = dashboardData.chart.map(function (_, index) {
+				return String(index);
+			});
+
+			if (ssimChart !== null) {
+				ssimChart.destroy();
+			}
+
+			ssimChart = new Chart(ssimCanvas, {
+				type: 'line',
+				data: {
+					labels: ssimLabels,
+					datasets: [{
+						label: 'SSIM',
+						data: dashboardData.chart,
+						borderColor: '#4FD1C5',
+						backgroundColor: 'rgba(79, 209, 197, 0.15)',
+						fill: true,
+						tension: 0.35,
+						pointRadius: 4,
+						pointBackgroundColor: '#4FD1C5'
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: {
+							display: false
+						}
+					},
+					scales: {
+						x: {
+							title: {
+								display: true,
+								text: 'Frame',
+								color: '#334155'
+							},
+							ticks: {
+								color: '#475569'
+							},
+							grid: {
+								color: '#e2e8f0'
+							}
+						},
+						y: {
+							min: 0.9,
+							max: 1.0,
+							title: {
+								display: true,
+								text: 'SSIM',
+								color: '#334155'
+							},
+							ticks: {
+								color: '#475569'
+							},
+							grid: {
+								color: '#e2e8f0'
+							}
+						}
+					}
+				}
+			});
+		}
+
+		async function loadDashboardData() {
+			try {
+				const response = await fetch('metrics.json');
+				if (!response.ok) {
+					throw new Error('Failed to load metrics.json: ' + response.status);
+				}
+
+				const dashboardData = await response.json();
+				applyDashboardData(dashboardData);
+			} catch (error) {
+				console.error('Could not load metrics.json, using fallback values:', error);
+				applyDashboardData(defaultDashboardData);
+			}
+		}
+
+		loadDashboardData();
+	</script>
+</body>
+</html>
