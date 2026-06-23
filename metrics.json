@@ -1,0 +1,10 @@
+{
+  "summary": { "ssim": 0.974, "psnr": 34.2, "mse": 0.0091, "fsim": 0.951 },
+  "chart": [0.91, 0.93, 0.945, 0.95, 0.958, 0.962, 0.967, 0.971, 0.972, 0.974],
+  "scenarios": [
+    { "name": "Steady cloud drift", "ssim": 0.981, "sequences": 42, "status": "good" },
+    { "name": "Thunderstorm formation", "ssim": 0.967, "sequences": 28, "status": "good" },
+    { "name": "Cyclone fast-rotation edge", "ssim": 0.918, "sequences": 19, "status": "moderate" },
+    { "name": "Clear-sky / land boundary", "ssim": 0.992, "sequences": 31, "status": "good" }
+  ]
+}
